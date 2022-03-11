@@ -1,8 +1,10 @@
 package edu.eci.cvds.servlet;
 
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.Writer;
-import java.util.List;
+import java.net.MalformedURLException;
+import java.util.ArrayList;
 import java.util.Optional;
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
@@ -20,15 +22,37 @@ public class Sample2Servlet extends HttpServlet{
 
     @Override
    protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-    	Writer responseWriter = resp.getWriter();
-        Optional<String> optId = Optional.ofNullable(req.getParameter("id"));
-        int id = optId.isPresent() && !optId.get().isEmpty() ? Integer.parseInt(optId.get()) : 0;
-        
-        if(Service.getTodo(id) != null) {
-        	resp.setStatus(HttpServletResponse.SC_OK);
-        	responseWriter.write(Service.todosToHTMLTable(Service.getTodo(id)));
-        	responseWriter.flush();
-        }
+    	 Writer responseWriter = resp.getWriter();
+         String message = "";
+         try{
+             Optional<String> optId = Optional.ofNullable(req.getParameter("id") );
+             Todo todo = Service.getTodo( Integer.parseInt(optId.get()) );
+             resp.setStatus(HttpServletResponse.SC_OK);
+
+             ArrayList<Todo> todoList = new ArrayList<>();
+             todoList.add(todo);
+             message =Service.todosToHTMLTable(todoList);
+         }
+         catch ( FileNotFoundException fileNotFoundException){
+             resp.setStatus(HttpServletResponse.SC_NOT_FOUND);
+             message = "no existe un item con el identificador dado.";
+         }
+         catch( NumberFormatException numberFormatException){
+             resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+             message = "requerimiento inválido";
+         }
+         catch( MalformedURLException malformedURLException){
+             resp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+             message = "error interno en el servidor";
+         }
+         catch(Exception exception){
+             resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+             message = "requerimiento inválido";
+         }
+         finally {
+             responseWriter.write(message);
+         }
+ 
     }     
     
 }
